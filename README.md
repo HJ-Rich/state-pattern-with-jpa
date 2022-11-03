@@ -32,6 +32,8 @@
 
 <br><br>
 
+### Interface <> Enum.String Converter
+
 ```java
 
 @Converter
@@ -57,6 +59,8 @@ public class CouponStatusConverter implements AttributeConverter<CouponState, St
 - 조회시엔 조회된 Enum.String을 Enum의 static 메서드를 통해 어떤 Enum인지 찾아낸 뒤, Enum을 통해 상태패턴 구현체를 받아낸다.
 
 <br><br>
+
+### 상태값 자체를 의미하며 상태 구현체를 생성해주는 Enum
 
 ```java
 public enum CouponStatus {
@@ -88,6 +92,53 @@ public enum CouponStatus {
 - Enum의 필드로 Supplier<CouponState>를 선언해두었다.
 - 이로 인해 각 상태 패턴 구현체 내에서도 매개변수로 전달된 CouponStatus의 getConcrete라는 일관된 메서드만 호출하여 반환값을 설정했다.
 - 이후 추가로 상태가 구현되더라도 기존 구현부엔 변경이 없는 구조가 가능해졌다.
+
+<br><br>
+
+### 쿠폰 <> 쿠폰 상태 구현체 상호작용
+
+```java
+public class CouponRequestedState implements CouponState {
+    public static final String EXCEPTION_FROM_REQUESTED = "Requested에선 Ready또는 Accepted로만 가능";
+
+    @Override
+    public CouponStatus getCouponStatus() {
+        return CouponStatus.Requested;
+    }
+
+    @Override
+    public CouponState changeState(final CouponStatus couponStatus) {
+        if (notToReadyNorAccepted(couponStatus)) {
+            throw new IllegalStateException(EXCEPTION_FROM_REQUESTED);
+        }
+
+        return couponStatus.getConcrete();
+    }
+
+    private boolean notToReadyNorAccepted(final CouponStatus couponStatus) {
+        return !List.of(CouponStatus.Ready, CouponStatus.Accepted).contains(couponStatus);
+    }
+}
+```
+
+```java
+public class Coupon {
+    // ...
+    @Convert(converter = CouponStatusConverter.class)
+    private CouponState couponState;
+
+    // ...
+    public void changeStatus(final CouponStatus couponStatus) {
+        this.couponState = this.couponState.changeState(couponStatus);
+    }
+}
+```
+
+- 쿠폰 상태 구현체에선 새로운 Enum값을 받아서 검증후 새로운 상태를 반환한다
+- Coupon은 반환된 새로운 상태를 자신에게 할당한다
+- 이 때 변경된 값에 대해 Dirty Check가 일어나고 Update 쿼리가 수행된다
+- 위 코드의 비즈니스 로직은 `사용 신청` 상태에선
+  `사용 신청 취소` 또는 `사용 수락`으로의 상태 변화만 가능하다는 것을 표현하고자 했다
 
 <br><br>
 
