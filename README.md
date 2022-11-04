@@ -1,5 +1,11 @@
 ### 상태패턴, JPA
 
+![img_3.png](img_3.png)
+![img_4.png](img_4.png)
+
+- 위 그림 : 구현 코드로 생성한 Diagram
+- 아래 그림 출처 : https://ko.wikipedia.org/wiki/%EC%83%81%ED%83%9C_%ED%8C%A8%ED%84%B4
+
 - 쿠폰 상태 : Ready -> Requested -> Accepted -> Finished
 - Coupon 엔티티가 Coupon상태 인터페이스를 필드로 지님.
 - Coupon 엔티티는 Coupon상태 변경 요청이 오면 상태 인터페이스에게 요청을 넘김.
